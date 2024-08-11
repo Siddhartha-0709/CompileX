@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useRef, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Editor from '@monaco-editor/react';
@@ -109,7 +110,7 @@ function App() {
       };
       const language_id = languageIdMap[language];
       showLoader(true);
-      const response = await axios.post('http://143.110.184.202:2358/submissions/?base64_encoded=false&wait=true', {
+      const response = await axios.post('https://www.siddharthapro.in/app2/submissions/?base64_encoded=false&wait=true', {
         language_id: language_id,
         source_code: value,
         stdin: input,
