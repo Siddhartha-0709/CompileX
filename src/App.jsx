@@ -127,7 +127,7 @@ function App() {
   return (
     <>
       <div style={{ backgroundColor: '#1e1e1e', color: '#ececec' }}>
-      <div className='header flex justify-between items-center border-b border-gray-700 bg-gradient-to-r from-gray-900 to-gray-800 shadow-md p-2'>
+      <div className='header flex justify-between items-center border-b border-gray-700 bg-gradient-to-r from-gray-900 to-gray-800 shadow-md p-2 hidden md:flex'>
         <button className='flex items-center'>
           <img src={logo} alt="CompileX Logo" className='h-10 w-10 mr-1 rounded-xl' />
           <div className='flex flex-col mb-3'>
@@ -154,6 +154,32 @@ function App() {
           </button>
         </div>
       </div>
+      <div className='header flex justify-between items-center border-b border-gray-700 bg-gradient-to-r from-gray-900 to-gray-800 shadow-md p-2 md:hidden'>
+        <button className='flex items-center'>
+          <img src={logo} alt="CompileX Logo" className='h-10 w-10 mr-1 rounded-xl' />
+          <div className='flex flex-col mb-3'>
+            <h1 className='text-xl text-left font-bold text-white' onClick={handleReset}>CompileX</h1>
+            <p className='text-left text-white absolute top-7 text-sm text-gray-400'>Siddhartha Mukherjee & Team</p>
+          </div>
+        </button>
+      </div>
+      <div>
+      <div className='flex items-center md:hidden border-b border-gray-700 bg-gradient-to-r from-gray-900 to-gray-800 shadow-md p-2 mb-2'>
+          <select value={language} className='bg-gray-700 text-white font-medium py-1 px-3 rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2' onChange={handleLanguageChange}>
+            <option value="javascript">JavaScript</option>
+            <option value="java">Java</option>
+            <option value="cpp">C++</option>
+            <option value="c">C</option>
+          </select>
+          <button className='bg-gray-700 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded shadow focus:outline-none focus:ring-2 focus:ring-red-500 mr-2' onClick={handleReset}>
+            Reset
+          </button>
+          <button className='bg-green-600 hover:bg-green-500 text-white font-medium py-1 px-4 rounded shadow focus:outline-none focus:ring-2 focus:ring-green-500' onClick={showValue}>
+            Run Code
+          </button>
+        </div>
+      </div>
+
       {loader?<div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: '10', textAlign: 'center', justifyContent: 'center', alignItems: 'center', display: 'flex', flexDirection: 'column' }}>
         <Oval
           visible={true}
