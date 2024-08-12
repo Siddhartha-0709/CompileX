@@ -110,7 +110,7 @@ function App() {
       };
       const language_id = languageIdMap[language];
       showLoader(true);
-      const response = await axios.post('https://www.siddharthapro.in/app2/submissions/?base64_encoded=false&wait=true', {
+      const response = await axios.post('https://siddharthapro.in/app2/submissions/?base64_encoded=false&wait=true', {
         language_id: language_id,
         source_code: value,
         stdin: input,
