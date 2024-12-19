@@ -99,26 +99,62 @@ function App() {
   }
 
   async function showValue() {
+    if (!editorRef?.current) {
+      setOutput('Editor is not available.');
+      return;
+    }
+
     try {
       const value = editorRef.current.getValue();
+      if (!value.trim()) {
+        setOutput('Source code cannot be empty.');
+        return;
+      }
+
       const languageIdMap = {
         javascript: 63,
         java: 62,
         cpp: 53,
         c: 50,
-        python: 71
+        python: 71,
       };
+
       const language_id = languageIdMap[language];
+      if (!language_id) {
+        setOutput('Unsupported language selected.');
+        return;
+      }
+
       showLoader(true);
-      const response = await axios.post('https://siddharthapro.in/app2/submissions/?base64_encoded=false&wait=true', {
-        language_id: language_id,
-        source_code: value,
-        stdin: input,
-      });
-      console.log('Response:', response.data);
-      setOutput(response.data.stdout || response.data.stderr || response.data.status.description);
+
+      const options = {
+        method: 'POST',
+        url: 'https://judge0-ce.p.rapidapi.com/submissions',
+        params: {
+          base64_encoded: 'true',
+          wait: 'true', // Set to true to wait for execution
+          fields: '*',
+        },
+        headers: {
+          'x-rapidapi-key': '7b661465f5msh5a1ea9d7d29a11cp13f7dfjsn9474f458933c', // Use an environment variable for security
+          'x-rapidapi-host': 'judge0-ce.p.rapidapi.com',
+          'Content-Type': 'application/json',
+        },
+        data: {
+          language_id,
+          source_code: btoa(value), // Encode source code in base64
+          stdin: input ? btoa(input) : '', // Encode stdin in base64
+        },
+      };
+
+      const response = await axios.request(options);
+      const output = atob(response.data.stdout || '') ||
+        atob(response.data.stderr || '') ||
+        response.data.status?.description ||
+        'Execution completed with no output.';
+      setOutput(output);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error during code execution:', error);
       setOutput('An error occurred while executing the code.');
     } finally {
       showLoader(false);
@@ -127,129 +163,129 @@ function App() {
   return (
     <>
       <div style={{ backgroundColor: '#1e1e1e', color: '#ececec' }}>
-      <div className='header flex justify-between items-center border-b border-gray-700 bg-gradient-to-r from-gray-900 to-gray-800 shadow-md p-2 hidden md:flex'>
-        <button className='flex items-center'>
-          <img src={logo} alt="CompileX Logo" className='h-10 w-10 mr-1 rounded-xl' />
-          <div className='flex flex-col mb-3'>
-            <h1 className='text-xl text-left font-bold text-white' onClick={handleReset}>CompileX</h1>
-            <p className='text-left text-white absolute top-7 text-sm text-gray-400'>Siddhartha Mukherjee & Team</p>
+        <div className='header flex justify-between items-center border-b border-gray-700 bg-gradient-to-r from-gray-900 to-gray-800 shadow-md p-2 hidden md:flex'>
+          <button className='flex items-center'>
+            <img src={logo} alt="CompileX Logo" className='h-10 w-10 mr-1 rounded-xl' />
+            <div className='flex flex-col mb-3'>
+              <h1 className='text-xl text-left font-bold text-white' onClick={handleReset}>CompileX</h1>
+              <p className='text-left text-white absolute top-7 text-sm text-gray-400'>Siddhartha Mukherjee & Team</p>
+            </div>
+          </button>
+          <div className='flex items-center'>
+            <h1 className='ml-32 text-white mr-3'>Beta Version</h1>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#80ff00" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkle"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /></svg>
           </div>
-        </button>
-        <div className='flex items-center'>
-          <h1 className='ml-32 text-white mr-3'>Beta Version</h1>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#80ff00" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkle"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
-        </div>
-        <div className='flex items-center'>
-          <select value={language} className='bg-gray-700 text-white font-medium py-1 px-3 rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2' onChange={handleLanguageChange}>
-            <option value="javascript">JavaScript</option>
-            <option value="java">Java</option>
-            <option value="cpp">C++</option>
-            <option value="c">C</option>
-          </select>
-          <button className='bg-gray-700 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded shadow focus:outline-none focus:ring-2 focus:ring-red-500 mr-2' onClick={handleReset}>
-            Reset
-          </button>
-          <button className='bg-green-600 hover:bg-green-500 text-white font-medium py-1 px-4 rounded shadow focus:outline-none focus:ring-2 focus:ring-green-500' onClick={showValue}>
-            Run Code
-          </button>
-        </div>
-      </div>
-      <div className='header flex justify-between items-center border-b border-gray-700 bg-gradient-to-r from-gray-900 to-gray-800 shadow-md p-2 md:hidden'>
-        <button className='flex items-center'>
-          <img src={logo} alt="CompileX Logo" className='h-10 w-10 mr-1 rounded-xl' />
-          <div className='flex flex-col mb-3'>
-            <h1 className='text-xl text-left font-bold text-white' onClick={handleReset}>CompileX</h1>
-            <p className='text-left text-white absolute top-7 text-sm text-gray-400'>Siddhartha Mukherjee & Team</p>
+          <div className='flex items-center'>
+            <select value={language} className='bg-gray-700 text-white font-medium py-1 px-3 rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2' onChange={handleLanguageChange}>
+              <option value="javascript">JavaScript</option>
+              <option value="java">Java</option>
+              <option value="cpp">C++</option>
+              <option value="c">C</option>
+            </select>
+            <button className='bg-gray-700 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded shadow focus:outline-none focus:ring-2 focus:ring-red-500 mr-2' onClick={handleReset}>
+              Reset
+            </button>
+            <button className='bg-green-600 hover:bg-green-500 text-white font-medium py-1 px-4 rounded shadow focus:outline-none focus:ring-2 focus:ring-green-500' onClick={showValue}>
+              Run Code
+            </button>
           </div>
-        </button>
-      </div>
-      <div>
-      <div className='flex items-center md:hidden border-b border-gray-700 bg-gradient-to-r from-gray-900 to-gray-800 shadow-md p-2 mb-2'>
-          <select value={language} className='bg-gray-700 text-white font-medium py-1 px-3 rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2' onChange={handleLanguageChange}>
-            <option value="javascript">JavaScript</option>
-            <option value="java">Java</option>
-            <option value="cpp">C++</option>
-            <option value="c">C</option>
-          </select>
-          <button className='bg-gray-700 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded shadow focus:outline-none focus:ring-2 focus:ring-red-500 mr-2' onClick={handleReset}>
-            Reset
-          </button>
-          <button className='bg-green-600 hover:bg-green-500 text-white font-medium py-1 px-4 rounded shadow focus:outline-none focus:ring-2 focus:ring-green-500' onClick={showValue}>
-            Run Code
+        </div>
+        <div className='header flex justify-between items-center border-b border-gray-700 bg-gradient-to-r from-gray-900 to-gray-800 shadow-md p-2 md:hidden'>
+          <button className='flex items-center'>
+            <img src={logo} alt="CompileX Logo" className='h-10 w-10 mr-1 rounded-xl' />
+            <div className='flex flex-col mb-3'>
+              <h1 className='text-xl text-left font-bold text-white' onClick={handleReset}>CompileX</h1>
+              <p className='text-left text-white absolute top-7 text-sm text-gray-400'>Siddhartha Mukherjee & Team</p>
+            </div>
           </button>
         </div>
-      </div>
+        <div>
+          <div className='flex items-center md:hidden border-b border-gray-700 bg-gradient-to-r from-gray-900 to-gray-800 shadow-md p-2 mb-2'>
+            <select value={language} className='bg-gray-700 text-white font-medium py-1 px-3 rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2' onChange={handleLanguageChange}>
+              <option value="javascript">JavaScript</option>
+              <option value="java">Java</option>
+              <option value="cpp">C++</option>
+              <option value="c">C</option>
+            </select>
+            <button className='bg-gray-700 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded shadow focus:outline-none focus:ring-2 focus:ring-red-500 mr-2' onClick={handleReset}>
+              Reset
+            </button>
+            <button className='bg-green-600 hover:bg-green-500 text-white font-medium py-1 px-4 rounded shadow focus:outline-none focus:ring-2 focus:ring-green-500' onClick={showValue}>
+              Run Code
+            </button>
+          </div>
+        </div>
 
-      {loader?<div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: '10', textAlign: 'center', justifyContent: 'center', alignItems: 'center', display: 'flex', flexDirection: 'column' }}>
-        <Oval
-          visible={true}
-          height="80"
-          width="80"
-          color="#4fa94d"
-          ariaLabel="oval-loading"
-          wrapperStyle={{}}
-          wrapperClass=""
+        {loader ? <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: '10', textAlign: 'center', justifyContent: 'center', alignItems: 'center', display: 'flex', flexDirection: 'column' }}>
+          <Oval
+            visible={true}
+            height="80"
+            width="80"
+            color="#4fa94d"
+            ariaLabel="oval-loading"
+            wrapperStyle={{}}
+            wrapperClass=""
+          />
+          <h1 className='mt-4 text-xl text-white'>Compiling. . . .</h1>
+        </div> : null}
+        <Editor
+          height="68vh"
+          width="100vw"
+          theme="vs-dark" // Apply the custom theme here
+          language={language}
+          defaultValue={defaultCodes[language]} // Set the initial value based on the language
+          onMount={handleEditorDidMount}
+          options={{
+            automaticLayout: true,
+            wordWrap: 'on',
+            scrollBeyondLastLine: false,
+            renderLineHighlight: 'none',
+            fontFamily: 'monospace',
+            fontSize: 24,
+            lineHeight: 24,
+            tabSize: 8,
+            quickSuggestions: true,
+            suggestOnTriggerCharacters: true,
+            parameterHints: { enabled: true },
+          }}
         />
-        <h1 className='mt-4 text-xl text-white'>Compiling. . . .</h1>
-      </div>:null}
-      <Editor
-        height="68vh"
-        width="100vw"
-        theme="vs-dark" // Apply the custom theme here
-        language={language}
-        defaultValue={defaultCodes[language]} // Set the initial value based on the language
-        onMount={handleEditorDidMount}
-        options={{
-          automaticLayout: true,
-          wordWrap: 'on',
-          scrollBeyondLastLine: false,
-          renderLineHighlight: 'none',
-          fontFamily: 'monospace',
-          fontSize: 24,
-          lineHeight: 24,
-          tabSize: 8,
-          quickSuggestions: true,
-          suggestOnTriggerCharacters: true,
-          parameterHints: { enabled: true },
-        }}
-      />
-      <hr style={{ borderWidth: '3px' }} />
-      <div className='flex' style={{ width: '100%' }}>
-        <div className='header border-b border-gray-700 border-r-2 flex flex-col' style={{ backgroundColor: '#111827', width: '50%', height: '225px', position: 'relative', padding: '16px' }}>
-          <h4 className='text-white text-xl mb-2 flex justify-between items-center'>
-            Input:
-            <button onClick={() => copyToClipboard(input)} className='focus:outline-none'>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clipboard"><rect width="8" height="4" x="8" y="2" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /></svg>
-            </button>
-          </h4>
-          <textarea
-            type="textarea"
-            name="input"
-            style={{ backgroundColor: '#1f2937', color: 'white', border: 'none', height: '100%', width: '100%', padding: '12px', borderRadius: '8px', fontSize: '16px', lineHeight: '24px' }}
-            placeholder='Your Input Here'
-            value={input}
-            onChange={handleInputChange}
-          />
+        <hr style={{ borderWidth: '3px' }} />
+        <div className='flex' style={{ width: '100%' }}>
+          <div className='header border-b border-gray-700 border-r-2 flex flex-col' style={{ backgroundColor: '#111827', width: '50%', height: '225px', position: 'relative', padding: '16px' }}>
+            <h4 className='text-white text-xl mb-2 flex justify-between items-center'>
+              Input:
+              <button onClick={() => copyToClipboard(input)} className='focus:outline-none'>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clipboard"><rect width="8" height="4" x="8" y="2" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /></svg>
+              </button>
+            </h4>
+            <textarea
+              type="textarea"
+              name="input"
+              style={{ backgroundColor: '#1f2937', color: 'white', border: 'none', height: '100%', width: '100%', padding: '12px', borderRadius: '8px', fontSize: '16px', lineHeight: '24px' }}
+              placeholder='Your Input Here'
+              value={input}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className='header border-b border-gray-700 border-r-2 flex flex-col' style={{ backgroundColor: '#111827', width: '50%', height: '225px', position: 'relative', padding: '16px' }}>
+            <h4 className='text-white text-xl mb-2 flex justify-between items-center'>
+              Output:
+              <button onClick={() => copyToClipboard(output)} className='focus:outline-none'>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clipboard"><rect width="8" height="4" x="8" y="2" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /></svg>
+              </button>
+            </h4>
+            <textarea
+              type="textarea"
+              name="output"
+              style={{ backgroundColor: '#1f2937', color: 'white', border: 'none', height: '100%', width: '100%', padding: '12px', borderRadius: '8px', fontSize: '16px', lineHeight: '24px' }}
+              placeholder='Your Output Here'
+              value={output}
+              readOnly
+            />
+          </div>
         </div>
-        <div className='header border-b border-gray-700 border-r-2 flex flex-col' style={{ backgroundColor: '#111827', width: '50%', height: '225px', position: 'relative', padding: '16px' }}>
-          <h4 className='text-white text-xl mb-2 flex justify-between items-center'>
-            Output:
-            <button onClick={() => copyToClipboard(output)} className='focus:outline-none'>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clipboard"><rect width="8" height="4" x="8" y="2" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /></svg>
-            </button>
-          </h4>
-          <textarea
-            type="textarea"
-            name="output"
-            style={{ backgroundColor: '#1f2937', color: 'white', border: 'none', height: '100%', width: '100%', padding: '12px', borderRadius: '8px', fontSize: '16px', lineHeight: '24px' }}
-            placeholder='Your Output Here'
-            value={output}
-            readOnly
-          />
-        </div>
+        <ToastContainer />
       </div>
-      <ToastContainer />
-    </div>
     </>
   );
 }
